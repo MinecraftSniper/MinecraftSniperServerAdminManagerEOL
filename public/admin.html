@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>加载中...</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <style>
+        :root {
+            --bg-body: rgba(255, 255, 255, 0.10);
+            --bg-overlay: rgba(255, 255, 255, 0.10);
+            --bg-card: rgba(255, 255, 255, 0.12);
+            --bg-card-hover: rgba(255, 255, 255, 0.22);
+            --bg-input: rgba(255, 255, 255, 0.08);
+            --bg-tab: transparent;
+            --bg-tab-hover: rgba(255, 255, 255, 0.15);
+            --bg-tab-active: rgba(255, 255, 255, 0.25);
+            --border-color: rgba(255, 255, 255, 0.15);
+            --border-active: rgba(255, 255, 255, 0.35);
+            --text-primary: #1a1a2e;
+            --text-secondary: rgba(0, 0, 0, 0.55);
+            --text-muted: rgba(0, 0, 0, 0.35);
+            --shadow-color: rgba(0, 0, 0, 0.06);
+            --status-published: #27ae60;
+            --status-draft: #d4a017;
+            --status-published-bg: rgba(46, 204, 113, 0.15);
+            --status-draft-bg: rgba(241, 196, 15, 0.15);
+            --danger: #c0392b;
+            --danger-bg: rgba(231, 76, 60, 0.12);
+            --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+            --success: #27ae60;
+            --success-bg: rgba(46, 204, 113, 0.15);
+        }
+
+        [data-theme="dark"] {
+            --bg-body: rgba(20, 22, 36, 0.60);
+            --bg-overlay: rgba(20, 22, 36, 0.70);
+            --bg-card: rgba(255, 255, 255, 0.06);
+            --bg-card-hover: rgba(255, 255, 255, 0.12);
+            --bg-input: rgba(255, 255, 255, 0.06);
+            --bg-tab: transparent;
+            --bg-tab-hover: rgba(255, 255, 255, 0.08);
+            --bg-tab-active: rgba(255, 255, 255, 0.12);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(255, 255, 255, 0.20);
+            --text-primary: #e8e8f0;
+            --text-secondary: rgba(255, 255, 255, 0.60);
+            --text-muted: rgba(255, 255, 255, 0.35);
+            --shadow-color: rgba(0, 0, 0, 0.20);
+            --status-published: #5ddf8a;
+            --status-draft: #f0c040;
+            --status-published-bg: rgba(46, 204, 113, 0.20);
+            --status-draft-bg: rgba(241, 196, 15, 0.20);
+            --danger: #e74c5e;
+            --danger-bg: rgba(231, 76, 60, 0.18);
+            --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+            --success: #5ddf8a;
+            --success-bg: rgba(46, 204, 113, 0.20);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            line-height: 1.7;
+            min-height: 100vh;
+            background-size: cover;
+            background-position: center;
+            background-attachment: scroll;
+            transition: background-color 0.4s ease, color 0.3s ease;
+            position: relative;
+            overflow-x: hidden;
+            color: var(--text-primary);
+            background-color: #1a1a2e;
+        }
+
+        .overlay {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+            min-height: 100vh;
+            background: var(--bg-overlay);
+            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-bottom: none;
+            box-shadow: inset 0 0 80px rgba(255, 255, 255, 0.04), 0 20px 60px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: background 0.4s ease, border-color 0.3s ease;
+        }
+
+        .admin-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .admin-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .admin-header .right-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+        .admin-header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            background: var(--bg-card);
+            padding: 4px 16px 4px 18px;
+            border-radius: 40px;
+            border: 1px solid var(--border-color);
+        }
+
+        .admin-header .user-info .logout {
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 2px 10px;
+            border-radius: 30px;
+            transition: all 0.2s;
+            font-size: 0.8rem;
+            border: 1px solid transparent;
+        }
+
+        .admin-header .user-info .logout:hover {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border-color: rgba(231, 76, 60, 0.20);
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: 40px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .theme-toggle:hover { background: var(--bg-card-hover); border-color: var(--border-active); }
+
+        .admin-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 2px;
+        }
+
+        .admin-tabs .tab {
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 30px 30px 0 0;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.25s;
+            border: 1px solid transparent;
+            border-bottom: none;
+            user-select: none;
+        }
+
+        .admin-tabs .tab:hover { background: var(--bg-tab-hover); color: var(--text-primary); }
+        .admin-tabs .tab.active {
+            background: var(--bg-tab-active);
+            color: var(--text-primary);
+            font-weight: 600;
+            border-color: var(--border-active);
+        }
+
+        .tab-content { animation: fade 0.25s ease; }
+        @keyframes fade { from { opacity: 0.3; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        .disk-sub-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 2px;
+        }
+
+        .disk-sub-tabs .sub-tab {
+            cursor: pointer;
+            padding: 6px 18px;
+            border-radius: 20px 20px 0 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            transition: all 0.25s;
+            border: 1px solid transparent;
+            border-bottom: none;
+            user-select: none;
+        }
+
+        .disk-sub-tabs .sub-tab:hover { background: var(--bg-tab-hover); color: var(--text-primary); }
+        .disk-sub-tabs .sub-tab.active {
+            background: var(--bg-tab-active);
+            color: var(--text-primary);
+            font-weight: 600;
+            border-color: var(--border-active);
+        }
+
+        .sub-tab-pane { display: none; }
+        .sub-tab-pane.active { display: block; }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(8px);
+            border-radius: 14px;
+            padding: 16px 18px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+            transition: all 0.25s;
+        }
+
+        .card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-active);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--shadow-color);
+        }
+
+        .card .card-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .card .card-value {
+            font-size: 1.7rem;
+            font-weight: 600;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .card .card-value .unit {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: 4px;
+        }
+
+        .card .card-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .list-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(6px);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: all 0.2s;
+            flex-wrap: wrap;
+        }
+
+        .list-card:hover { background: var(--bg-card-hover); border-color: var(--border-active); }
+        .list-card .info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; min-width: 120px; }
+        .list-card .info .title { font-weight: 500; font-size: 0.95rem; }
+        .list-card .info .meta { font-size: 0.75rem; color: var(--text-muted); }
+        .list-card .actions { display: flex; gap: 4px; flex-wrap: wrap; }
+        .list-card .actions .btn {
+            padding: 3px 12px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .list-card .actions .btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .list-card .actions .btn.danger:hover { background: var(--danger-bg); color: var(--danger); }
+
+        .btn-primary {
+            padding: 6px 20px;
+            border-radius: 40px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover { background: var(--bg-card-hover); border-color: var(--border-active); transform: translateY(-1px); }
+
+        .btn-secondary {
+            padding: 6px 20px;
+            border-radius: 40px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover { background: var(--bg-card); color: var(--text-primary); }
+
+        .terminal-wrapper {
+            background: #0c0c0c;
+            border-radius: 10px;
+            border: 1px solid #2a2a2a;
+            padding: 6px;
+            min-height: 460px;
+            max-height: 580px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #terminal-container { width: 100%; flex: 1; min-height: 400px; max-height: 520px; }
+        .terminal-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px 6px 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            color: #888;
+            border-bottom: 1px solid #1a1a1a;
+            flex-shrink: 0;
+        }
+        .terminal-status .dot { width: 8px; height: 8px; border-radius: 50%; background: #ff4444; }
+        .terminal-status .dot.connected { background: #00ff41; }
+        .terminal-status .dot.connecting { background: #ffaa00; }
+
+        .copyright-box {
+            background: var(--bg-input);
+            border-radius: 10px;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        hr { border: none; border-top: 1px solid var(--border-color); margin: 10px 0; }
+
+        .section-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .count-info { font-size: 0.8rem; color: var(--text-muted); text-align: right; margin-top: 6px; }
+
+        @media (max-width: 768px) {
+            .overlay { padding: 16px 12px 30px; }
+            .card-grid { grid-template-columns: 1fr; gap: 10px; }
+            .terminal-wrapper { min-height: 340px; max-height: 440px; }
+            #terminal-container { min-height: 280px; max-height: 380px; }
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--bg-input); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+
+        .disk-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .disk-card:hover { background: var(--bg-card-hover); border-color: var(--border-active); }
+
+        .disk-card .disk-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-weight: 500;
+        }
+
+        .disk-card .disk-header .disk-icon { font-size: 1.2rem; }
+        .disk-card .disk-header .disk-name { font-weight: 600; }
+        .disk-card .disk-header .disk-size { color: var(--text-muted); font-size: 0.85rem; }
+        .disk-card .disk-header .badge-system {
+            background: var(--status-draft-bg);
+            color: var(--status-draft);
+            font-size: 0.6rem;
+            padding: 0 8px;
+            border-radius: 30px;
+            font-weight: 500;
+        }
+
+        .disk-card .partition-list {
+            margin-top: 8px;
+            padding-left: 24px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .disk-card .partition-list .part-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            border-top: 1px solid var(--border-color);
+            padding: 4px 0;
+        }
+
+        .disk-card .partition-list .part-row:first-child { border-top: none; }
+
+        .disk-card .disk-actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .disk-card .disk-actions .btn-sm {
+            padding: 2px 12px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            font-size: 0.7rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .disk-card .disk-actions .btn-sm:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+        .disk-card .disk-actions .btn-sm.danger:hover { background: var(--danger-bg); color: var(--danger); }
+        .disk-card .disk-actions .btn-sm.success:hover { background: var(--success-bg); color: var(--success); }
+        .disk-card .disk-actions .system-hint { font-size: 0.75rem; color: var(--text-muted); }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-box {
+            background: var(--bg-overlay);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 480px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-box h3 { margin-bottom: 16px; }
+        .modal-box .form-group { margin-bottom: 12px; }
+        .modal-box .form-group label { display: block; font-size: 0.8rem; margin-bottom: 4px; color: var(--text-secondary); }
+        .modal-box .form-group select,
+        .modal-box .form-group input {
+            width: 100%;
+            padding: 6px 12px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .modal-box .modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+        .modal-box .modal-actions .btn { padding: 6px 20px; border-radius: 40px; border: none; cursor: pointer; font-size: 0.85rem; }
+        .modal-box .modal-actions .btn-primary { background: var(--bg-card-hover); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .modal-box .modal-actions .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="app">
+    <div class="admin-header">
+        <div class="brand">
+            🛠️ 服务器管理面板
+        </div>
+        <div class="right-group">
+            <button class="theme-toggle" id="themeToggle">🌓 主题</button>
+            <div class="user-info">
+                👤 管理员 <span class="logout" id="logoutBtn">退出</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-tabs">
+        <div class="tab active" data-tab="performance">📊 性能监控</div>
+        <div class="tab" data-tab="files">📁 文件管理</div>
+        <div class="tab" data-tab="disk">💾 磁盘管理</div>
+        <div class="tab" data-tab="terminal">🖥️ 终端</div>
+    </div>
+
+    <div class="tab-content">
+        <div id="performance" class="tab-pane active">
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-title">CPU 使用率</div>
+                    <div class="card-value" id="cpuUsage">-- <span class="unit">%</span></div>
+                    <div class="card-desc" id="cpuDetail">加载中...</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">系统已用内存</div>
+                    <div class="card-value" id="systemMemory">-- <span class="unit">%</span></div>
+                    <div class="card-desc" id="systemMemoryDetail">加载中...</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🌡️ CPU温度</div>
+                    <div class="card-value" id="cpuTemp">-- <span class="unit">°C</span></div>
+                    <div class="card-desc" id="cpuTempDetail">更新时间：--</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">网卡使用率</div>
+                    <div class="card-value" id="networkUsage">-- <span class="unit">Mbps</span></div>
+                    <div class="card-desc" id="networkDetail">加载中...</div>
+                </div>
+            </div>
+            <hr>
+            <div class="copyright-box">© 林鋆成 All Rights Reserved.</div>
+        </div>
+
+        <div id="files" class="tab-pane">
+            <div class="section-header">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1;">
+                    <input type="file" style="display:none;" id="uploadFileInput">
+                    <button class="btn-primary" onclick="document.getElementById('uploadFileInput').click();">📤 上传文件</button>
+                    <button class="btn-secondary" id="goParentBtn">⬆ 上级目录</button>
+                    <button class="btn-secondary" id="goRootBtn">🏠 根目录</button>
+                    <span style="font-size:0.75rem;color:var(--text-muted);" id="currentDirDisplay">当前目录: /</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                    <input type="text" class="search-box" placeholder="搜索文件..." id="fileSearch" style="width:150px;padding:5px 14px;border-radius:30px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-primary);outline:none;">
+                </div>
+            </div>
+            <div id="fileList"></div>
+            <div class="count-info" id="fileCount">共 0 个文件</div>
+        </div>
+
+        <div id="disk" class="tab-pane">
+            <div class="disk-sub-tabs">
+                <div class="sub-tab active" data-subtab="mountpoints">📂 挂载点</div>
+                <div class="sub-tab" data-subtab="disks">💿 磁盘管理</div>
+            </div>
+
+            <div id="sub-mountpoints" class="sub-tab-pane active">
+                <div class="section-header">
+                    <button class="btn-primary" onclick="loadMountpoints()">↻ 刷新</button>
+                </div>
+                <div id="mountpointList"></div>
+            </div>
+
+            <div id="sub-disks" class="sub-tab-pane">
+                <div class="section-header">
+                    <button class="btn-primary" onclick="loadDisks()">↻ 刷新</button>
+                </div>
+                <div id="diskList"></div>
+            </div>
+        </div>
+
+        <div id="terminal" class="tab-pane">
+            <div class="terminal-wrapper">
+                <div class="terminal-status">
+                    <span class="dot connecting" id="terminalDot"></span>
+                    <span id="terminalStatusText">正在连接...</span>
+                </div>
+                <div id="terminal-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box" id="modalBox"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links/lib/xterm-addon-web-links.js"></script>
+
+<script>
+    (function checkAuth() {
+        var token = localStorage.getItem('admin_token');
+        if (!token) { window.location.href = '/login.html'; return; }
+        fetch('/api/admin/verify', { headers: { 'Authorization': 'Bearer ' + token } })
+            .then(res => res.json())
+            .then(data => { if (!data.valid) { localStorage.removeItem('admin_token'); window.location.href = '/login.html'; } })
+            .catch(() => { localStorage.removeItem('admin_token'); window.location.href = '/login.html'; });
+    })();
+
+    async function loadAdminConfig() {
+        try {
+            var res = await fetch('/api/admin/config');
+            var data = await res.json();
+            if (data.background) document.body.style.backgroundImage = 'url(' + data.background + ')';
+            if (data.title) document.title = data.title;
+        } catch (err) {}
+    }
+    loadAdminConfig();
+
+    var tabs = document.querySelectorAll('.tab');
+    var panes = {
+        performance: document.getElementById('performance'),
+        files: document.getElementById('files'),
+        disk: document.getElementById('disk'),
+        terminal: document.getElementById('terminal')
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            var target = this.dataset.tab;
+            Object.keys(panes).forEach(k => panes[k].classList.toggle('active', k === target));
+            if (target === 'terminal' && window.terminal && window.terminal.fitAddon) {
+                setTimeout(() => { window.terminal.fitAddon.fit(); window.terminal.term.focus(); }, 200);
+            }
+            if (target === 'disk') { loadMountpoints(); loadDisks(); }
+        });
+    });
+
+    var themeToggle = document.getElementById('themeToggle');
+    var currentTheme = 'light';
+    themeToggle.addEventListener('click', function() {
+        var html = document.documentElement;
+        if (currentTheme === 'light') { html.setAttribute('data-theme', 'dark'); currentTheme = 'dark'; this.textContent = '暗色'; }
+        else { html.setAttribute('data-theme', 'light'); currentTheme = 'light'; this.textContent = '亮色'; }
+        if (window.terminal && window.terminal.term) {
+            window.terminal.term.options.theme = { background: currentTheme === 'dark' ? '#1a1a2e' : '#0c0c0c', foreground: '#c0c0c0', cursor: '#00ff41' };
+        }
+    });
+
+    function getToken() { return localStorage.getItem('admin_token'); }
+
+    var fileListEl = document.getElementById('fileList');
+    var fileCountEl = document.getElementById('fileCount');
+    var currentDirDisplay = document.getElementById('currentDirDisplay');
+    var files = [];
+    var currentPath = '/';
+    var parentPath = null;
+
+    async function loadFiles(path, filter) {
+        if (typeof path === 'undefined') path = '/';
+        if (typeof filter === 'undefined') filter = '';
+        try {
+            var res = await fetch('/api/admin/files?path=' + encodeURIComponent(path), { headers: { 'Authorization': 'Bearer ' + getToken() } });
+            var data = await res.json();
+            files = Array.isArray(data.files) ? data.files : [];
+            currentPath = data.currentPath || path;
+            parentPath = data.parentPath || null;
+            currentDirDisplay.textContent = '当前目录: ' + currentPath;
+            renderFiles(filter);
+        } catch (err) {
+            fileListEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">❌ 加载失败</div>';
+            fileCountEl.textContent = '共 0 个文件';
+        }
+    }
+
+    function renderFiles(filter) {
+        if (typeof filter === 'undefined') filter = '';
+        var fileArray = Array.isArray(files) ? files : [];
+        var filtered = fileArray.filter(f => f.name && f.name.toLowerCase().includes(filter.toLowerCase()));
+        if (filtered.length === 0) {
+            fileListEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">📭 此目录为空</div>';
+            fileCountEl.textContent = '共 0 个文件'; return;
+        }
+        var html = '';
+        filtered.forEach(f => {
+            var isDir = f.isDir === true;
+            var icon = isDir ? '📁' : '📄';
+            var fileSize = (!isDir && typeof f.size === 'number') ? (f.size / 1024).toFixed(1) + ' KB' : '--';
+            var safePath = (f.path || '').replace(/"/g, '&quot;');
+            html += `<div class="list-card" style="${isDir ? 'border-left:3px solid var(--status-draft);' : ''}">
+                <div class="info"><span class="title" style="${isDir ? 'cursor:pointer;' : ''}" ${isDir ? `data-action="open-dir" data-path="${safePath}"` : ''}>${icon} ${f.name || '未命名'}</span><span class="meta">${fileSize} · ${f.modified || '--'}</span></div>
+                <div class="actions">${!isDir ? `<button class="btn" data-action="download-file" data-path="${safePath}">📥 下载</button>` : ''}<button class="btn danger" data-action="delete-file" data-path="${safePath}">🗑️ 删除</button></div>
+            </div>`;
+        });
+        fileListEl.innerHTML = html;
+        fileListEl.querySelectorAll('[data-action="open-dir"]').forEach(el => el.addEventListener('click', function() { if (this.dataset.path) loadFiles(this.dataset.path, document.getElementById('fileSearch').value); }));
+        fileListEl.querySelectorAll('[data-action="download-file"]').forEach(el => el.addEventListener('click', function() { downloadFile(this.dataset.path); }));
+        fileListEl.querySelectorAll('[data-action="delete-file"]').forEach(el => el.addEventListener('click', function() { deleteFile(this.dataset.path); }));
+        fileCountEl.textContent = '共 ' + filtered.length + ' 个文件';
+    }
+
+    document.getElementById('goParentBtn').addEventListener('click', function() { if (parentPath) loadFiles(parentPath, document.getElementById('fileSearch').value); else alert('已在根目录'); });
+    document.getElementById('goRootBtn').addEventListener('click', function() { loadFiles('/', document.getElementById('fileSearch').value); });
+
+    async function downloadFile(path) {
+        if (!path) return alert('❌ 无效路径');
+        try {
+            var res = await fetch('/api/admin/files/download?path=' + encodeURIComponent(path), { headers: { 'Authorization': 'Bearer ' + getToken() } });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            var blob = await res.blob(); var url = URL.createObjectURL(blob); var a = document.createElement('a');
+            a.href = url; a.download = path.split(/[\/\\]/).pop() || 'download';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        } catch (err) { alert('❌ 下载失败: ' + err.message); }
+    }
+
+    async function deleteFile(path) {
+        if (!path) return alert('❌ 无效路径');
+        if (!confirm('确认删除 "' + path + '" 吗？不可恢复！')) return;
+        try {
+            var res = await fetch('/api/admin/files?path=' + encodeURIComponent(path), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + getToken() } });
+            var result = await res.json();
+            if (result.success) loadFiles(currentPath, document.getElementById('fileSearch').value);
+            else alert('❌ 删除失败: ' + (result.error || result.message));
+        } catch (err) { alert('❌ 删除失败: ' + err.message); }
+    }
+
+    document.getElementById('uploadFileInput').addEventListener('change', async function() {
+        if (this.files.length === 0) return;
+        var file = this.files[0]; var formData = new FormData(); formData.append('file', file);
+        try {
+            var res = await fetch('/api/admin/files/upload?path=' + encodeURIComponent(currentPath), { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }, body: formData });
+            var result = await res.json();
+            if (result.success) loadFiles(currentPath, document.getElementById('fileSearch').value);
+            else alert('❌ 上传失败: ' + (result.message || '未知错误'));
+        } catch (err) { alert('❌ 上传失败: ' + err.message); } this.value = '';
+    });
+
+    document.getElementById('fileSearch').addEventListener('input', function() { renderFiles(this.value); });
+    loadFiles('/', '');
+
+    async function loadMountpoints() {
+        try {
+            var res = await fetch('/api/admin/disks/mountpoints', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+            var data = await res.json();
+            if (data.success) renderMountpoints(data.mountpoints);
+            else document.getElementById('mountpointList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">❌ 加载失败</div>';
+        } catch (err) { document.getElementById('mountpointList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">❌ 加载失败</div>'; }
+    }
+
+    function renderMountpoints(mountpoints) {
+        if (!mountpoints || mountpoints.length === 0) { document.getElementById('mountpointList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">📭 没有挂载点</div>'; return; }
+        var html = '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;">';
+        html += '<tr style="border-bottom:1px solid var(--border-color);text-align:left;"><th style="padding:6px 8px;">文件系统</th><th style="padding:6px 8px;">容量</th><th style="padding:6px 8px;">已用</th><th style="padding:6px 8px;">可用</th><th style="padding:6px 8px;">已用%</th><th style="padding:6px 8px;">挂载点</th></tr>';
+        mountpoints.forEach(m => {
+            var pct = parseInt(m.usePercent) || 0;
+            var color = pct > 90 ? 'var(--danger)' : (pct > 75 ? 'var(--status-draft)' : 'var(--text-secondary)');
+            html += `<tr style="border-bottom:1px solid var(--border-color);"><td style="padding:6px 8px;">${m.filesystem}</td><td style="padding:6px 8px;">${m.size}</td><td style="padding:6px 8px;">${m.used}</td><td style="padding:6px 8px;">${m.available}</td><td style="padding:6px 8px;color:${color};">${m.usePercent}</td><td style="padding:6px 8px;">${m.mountpoint}</td></tr>`;
+        });
+        document.getElementById('mountpointList').innerHTML = html + '</table>';
+    }
+
+    async function loadDisks() {
+        try {
+            var res = await fetch('/api/admin/disks', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+            var data = await res.json();
+            if (data.success) renderDisks(data.disks);
+            else document.getElementById('diskList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">❌ 加载失败</div>';
+        } catch (err) { document.getElementById('diskList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">❌ 加载失败</div>'; }
+    }
+
+    function renderDisks(disks) {
+        if (!disks || disks.length === 0) { document.getElementById('diskList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">📭 没有磁盘设备</div>'; return; }
+        var html = '';
+        disks.forEach(d => {
+            var isSystem = d.isSystem || false;
+            html += '<div class="disk-card">';
+            html += '<div class="disk-header">';
+            html += `<span class="disk-icon">${d.type === 'disk' ? '💾' : '📀'}</span>`;
+            html += `<span class="disk-name">${d.device}</span>`;
+            html += `<span class="disk-size">${d.size || '--'}</span>`;
+            if (isSystem) html += '<span class="badge-system">⚠️ 系统盘</span>';
+            html += '</div>';
+
+            if (d.partitions && d.partitions.length > 0) {
+                html += '<div class="partition-list">';
+                d.partitions.forEach(p => {
+                    var usePercent = (p.usePercent !== undefined && p.usePercent !== null) ? p.usePercent + '%' : '--';
+                    html += `<div class="part-row"><span>${p.device}</span><span>${p.mountpoint || '未挂载'}</span><span>${p.fstype || '--'}</span><span>${p.size || '--'}</span><span>${usePercent}</span></div>`;
+                });
+                html += '</div>';
+            }
+
+            html += '<div class="disk-actions">';
+            if (!isSystem) {
+                html += `<button class="btn-sm" onclick="mountPartition('${d.device}')">➕ 挂载</button>`;
+                html += `<button class="btn-sm danger" onclick="umountPartition('${d.device}')">➖ 卸载</button>`;
+                html += `<button class="btn-sm danger" onclick="formatPartition('${d.device}')">📝 格式化</button>`;
+                html += `<button class="btn-sm" onclick="checkHealth('${d.device}')">🧹 健康检测</button>`;
+            } else {
+                html += `<button class="btn-sm" onclick="checkHealth('${d.device}')">🧹 健康检测</button>`;
+                html += '<span class="system-hint">系统盘，仅支持健康检测</span>';
+            }
+            html += '</div></div>';
+        });
+        document.getElementById('diskList').innerHTML = html;
+    }
+
+    function showModal(html) { document.getElementById('modalBox').innerHTML = html; document.getElementById('modalOverlay').classList.add('active'); }
+    function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+
+    function mountPartition(device) {
+        var mountpoint = prompt('输入挂载点路径 (例如 /mnt/data):', '/mnt/'); if (!mountpoint) return;
+        var fstype = prompt('文件系统 (留空自动检测, 或输入 ext4/xfs/ntfs):', '');
+        var automount = confirm('是否开机自动挂载?');
+        fetch('/api/admin/disks/mount', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, body: JSON.stringify({ device, mountpoint, fstype: fstype || undefined, automount }) })
+            .then(r => r.json()).then(data => { if (data.success) { alert('✅ 挂载成功'); loadMountpoints(); loadDisks(); } else alert('❌ 挂载失败: ' + data.error); })
+            .catch(err => alert('❌ 请求失败: ' + err.message));
+    }
+
+    function umountPartition(device) {
+        if (!confirm('确认卸载 ' + device + ' 吗？')) return;
+        fetch('/api/admin/disks/umount', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, body: JSON.stringify({ device }) })
+            .then(r => r.json()).then(data => { if (data.success) { alert('✅ 卸载成功'); loadMountpoints(); loadDisks(); } else alert('❌ 卸载失败: ' + data.error); })
+            .catch(err => alert('❌ 请求失败: ' + err.message));
+    }
+
+    function formatPartition(device) {
+        if (!confirm('⚠️ 格式化将清除 ' + device + ' 上的所有数据！不可恢复！')) return;
+        var fstype = prompt('选择文件系统 (ext4 / xfs / ntfs):', 'ext4'); if (!fstype) return;
+        var confirmDevice = prompt('请输入设备名以确认 (' + device + '):', '');
+        if (confirmDevice !== device) return alert('设备名不匹配，取消格式化');
+        fetch('/api/admin/disks/format', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, body: JSON.stringify({ device, fstype, confirm: device }) })
+            .then(r => r.json()).then(data => { if (data.success) { alert('✅ 格式化完成'); loadDisks(); } else alert('❌ 格式化失败: ' + data.error); })
+            .catch(err => alert('❌ 请求失败: ' + err.message));
+    }
+
+    function checkHealth(device) {
+        fetch('/api/admin/disks/health?device=' + encodeURIComponent(device), { headers: { 'Authorization': 'Bearer ' + getToken() } })
+            .then(res => res.json()).then(data => {
+                if (data.success) {
+                    var info = data.health; var msg = '设备: ' + device + '\n';
+                    if (data.type === 'emmc') {
+                        msg += '类型: eMMC\n寿命等级: ' + (info.lifeTime || '未知') + '\nPre EOL: ' + (info.preEol || '未知') + '\n健康评分: ' + (info.healthScore || 0) + '/100\n';
+                        if (info.deviceInfo) msg += '制造商: ' + info.deviceInfo.manufacturer + '\n版本: ' + info.deviceInfo.revision + '\n';
+                        msg += '状态: ' + info.health;
+                    } else { msg += '类型: SMART\n状态: ' + (info || '未知'); }
+                    alert(msg);
+                } else alert('❌ 健康检测失败: ' + (data.error || '未知错误'));
+            }).catch(err => alert('❌ 请求失败: ' + err.message));
+    }
+
+    document.querySelectorAll('.sub-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active')); this.classList.add('active');
+            var target = this.dataset.subtab;
+            document.querySelectorAll('.sub-tab-pane').forEach(p => p.classList.remove('active')); document.getElementById('sub-' + target).classList.add('active');
+            if (target === 'mountpoints') loadMountpoints(); if (target === 'disks') loadDisks();
+        });
+    });
+
+    var terminalInitialized = false;
+    var terminalDot = document.getElementById('terminalDot');
+    var terminalStatusText = document.getElementById('terminalStatusText');
+    function updateTerminalStatus(state, text) { terminalDot.className = 'dot ' + state; terminalStatusText.textContent = text; }
+    function initTerminal() {
+        if (terminalInitialized) return; terminalInitialized = true;
+        var token = localStorage.getItem('admin_token'); if (!token) return updateTerminalStatus('', '未登录');
+        var container = document.getElementById('terminal-container'); if (!container) return updateTerminalStatus('', '容器未就绪');
+        updateTerminalStatus('connecting', '正在连接...');
+        var fitAddon = new window.FitAddon.FitAddon();
+        var term = new Terminal({ cursorBlink: true, cursorStyle: 'block', theme: { background: '#0c0c0c', foreground: '#c0c0c0', cursor: '#00ff41' }, fontSize: 14, fontFamily: 'Courier New, monospace', scrollback: 2000, convertEol: true });
+        term.loadAddon(fitAddon); if (window.WebLinksAddon) term.loadAddon(new window.WebLinksAddon.WebLinksAddon());
+        term.open(container); setTimeout(() => fitAddon.fit(), 100); setTimeout(() => fitAddon.fit(), 500);
+        window.addEventListener('resize', () => { if (window.terminal && window.terminal.fitAddon) window.terminal.fitAddon.fit(); });
+        var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        var socket = new WebSocket(protocol + '//' + window.location.host + '/terminal/ws?token=' + encodeURIComponent(token));
+        socket.onopen = () => { updateTerminalStatus('connected', '已连接'); term.focus(); };
+        socket.onmessage = e => term.write(e.data);
+        socket.onerror = () => { updateTerminalStatus('', 'WebSocket 错误'); term.writeln('\x1b[31m● WebSocket 错误\x1b[0m'); };
+        socket.onclose = () => { updateTerminalStatus('', '已断开'); term.writeln('\x1b[33m● 连接已断开，刷新重连\x1b[0m'); };
+        term.onData(data => { if (socket.readyState === WebSocket.OPEN) socket.send(data); });
+        window.terminal = { term, socket, fitAddon };
+    }
+    if (document.readyState === 'complete') setTimeout(initTerminal, 300); else document.addEventListener('DOMContentLoaded', () => setTimeout(initTerminal, 300));
+
+    function formatBytes(bytes) {
+        var bytesBig;
+        try { bytesBig = typeof bytes === 'bigint' ? bytes : BigInt(Math.floor(Number(bytes))); } catch (e) { return '0 B'; }
+        if (bytesBig === 0n) return '0 B';
+        var units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        var i = 0, divisor = 1n;
+        while (i < units.length - 1 && bytesBig >= divisor * 1024n) { divisor *= 1024n; i++; }
+        var intPart = bytesBig / divisor, remainder = bytesBig % divisor;
+        var decimal = Number(remainder * 10n / divisor) / 10;
+        return (Number(intPart) + decimal).toFixed(1) + ' ' + units[i];
+    }
+    function formatSpeed(mbps) { var v = Number(mbps) || 0; if (v < 0.01) return '0 Mbps'; if (v >= 1000) return (v / 1000).toFixed(2) + ' Gbps'; return v.toFixed(1) + ' Mbps'; }
+
+    async function loadPerformance() {
+        try {
+            var res = await fetch('/api/admin/status', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+            var data = await res.json();
+            if (data.cpu) { document.getElementById('cpuUsage').innerHTML = data.cpu.usage + ' <span class="unit">%</span>'; document.getElementById('cpuDetail').textContent = '负载: ' + data.cpu.loadavg.join(', '); }
+            if (data.systemMemory) { document.getElementById('systemMemory').innerHTML = data.systemMemory.usedPercent + ' <span class="unit">%</span>'; document.getElementById('systemMemoryDetail').textContent = `已用 ${data.systemMemory.usedGB}GB / 总 ${data.systemMemory.totalGB}GB`; }
+            if (data.cpuTemp) { document.getElementById('cpuTemp').innerHTML = data.cpuTemp.temp + ' <span class="unit">°C</span>'; document.getElementById('cpuTempDetail').textContent = '更新于 ' + (data.cpuTemp.updated || '--'); }
+            if (data.network) { var speed = data.network.speed || 0; document.getElementById('networkUsage').innerHTML = speed.toFixed(1) + ' <span class="unit">Mbps</span>'; document.getElementById('networkDetail').textContent = `上行 ${(data.network.tx || 0).toFixed(1)} Mbps · 下行 ${(data.network.rx || 0).toFixed(1)} Mbps`; }
+        } catch (err) { console.error('加载性能数据失败:', err); }
+    }
+    loadPerformance(); setInterval(loadPerformance, 30000);
+
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        if (confirm('确认退出登录吗？')) {
+            if (window.terminal && window.terminal.socket) try { window.terminal.socket.close(); } catch (e) {}
+            localStorage.removeItem('admin_token'); window.location.href = 'login.html';
+        }
+    });
+
+    loadMountpoints(); loadDisks();
+</script>
+</body>
+</html>
