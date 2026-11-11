@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-# MinecraftSniper ServerAdmin Manager - Nuke 一键部署脚本
+# MinecraftSniper ServerAdmin Manager - 一键部署脚本
 # ============================================================
 
 # 检查 Docker 是否安装
@@ -11,7 +11,7 @@ if ! command -v docker &> /dev/null; then
 fi
 
 echo "=========================================="
-echo "  MinecraftSniper ServerAdmin Manager - Nuke"
+echo "  MinecraftSniper ServerAdmin Manager"
 echo "  一键部署脚本"
 echo "=========================================="
 echo ""
@@ -24,8 +24,8 @@ if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
 fi
 
 # 询问宿主机端口号
-read -p "请输入宿主机端口号 (默认 8553): " host_port
-host_port=${host_port:-8553}
+read -p "请输入宿主机端口号 (默认 1031): " host_port
+host_port=${host_port:-1031}
 
 # 询问重启策略
 echo ""
@@ -47,7 +47,7 @@ echo "=========================================="
 echo "  开始构建镜像..."
 echo "=========================================="
 
-docker build -t minecraftsniperserveradminmanager:nuke .
+docker build -t minecraftsniperserveradminmanager:latest .
 
 if [ $? -ne 0 ]; then
     echo "❌ 镜像构建失败，请检查错误信息。"
@@ -75,7 +75,7 @@ docker run -d \
   --hostname MinecraftSniperServerAdminManager \
   -p "$host_port":8553 \
   -e TZ=Asia/Shanghai \
-  minecraftsniperserveradminmanager:nuke
+  minecraftsniperserveradminmanager:latest
 
 if [ $? -ne 0 ]; then
     echo "❌ 容器启动失败。"
